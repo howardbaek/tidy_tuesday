@@ -34,8 +34,11 @@ round2 = function(x, n) {
   z = z/10^n
   z*posneg
 }
+```
 
-# Data Manipulation
+
+### Movies that make back their budgets
+```{r}
 movie %>% 
   # Add `x_times` demonstrating worldwide_gross / production_budget 
   mutate(x_times = worldwide_gross / production_budget,
