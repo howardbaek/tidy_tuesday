@@ -1,0 +1,101 @@
+---
+title: "Week 30 Horror Movies"
+author: "Jason Baik"
+date: "10/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Screencast for Week 30 Tidy Tuesday...
+
+
+### Import data from Github
+```{r}
+# Load packages
+library(tidyverse)
+theme_set(theme_light())
+
+# Import dataset from csv link
+movie <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018-10-23/movie_profit.csv") %>% 
+  # Get rid of row number column
+  select(-X1)
+```
+
+```{r}
+# Rounding function I found on SO: https://stackoverflow.com/questions/12688717/round-up-from-5
+round2 = function(x, n) {
+  posneg = sign(x)
+  z = abs(x)*10^n
+  z = z + 0.5
+  z = trunc(z)
+  z = z/10^n
+  z*posneg
+}
+
+# Data Manipulation
+movie %>% 
+  # Add `x_times` demonstrating worldwide_gross / production_budget 
+  mutate(x_times = worldwide_gross / production_budget,
+         x_times = round2(x_times, 0)) %>% 
+  count(genre, x_times) %>%
+  group_by(genre) %>% 
+  # Find proportions
+  mutate(prop_genre = n / sum(n),
+         per_genre = round2(prop_genre * 100, 1)) %>% 
+  filter(x_times <= 10) %>% 
+  ggplot(aes(x_times, per_genre)) +
+  geom_line(aes(color = genre)) +
+  facet_wrap(~genre) +
+  labs(x = "Worldwide revenue of films that earned Xtimes the budget",
+       y = "Percentage",
+       caption = "@jsonbaik") +
+  ggtitle("Close to 30% of Action and Comedy movies make back their budget") +
+  scale_x_continuous(limits = c(1, 10),
+                     breaks = 1:10) +
+  scale_y_continuous(limits = c(0, 30)) +
+  theme(legend.position = "none") 
+```
+
+### Visualize which year was the most profitable for Hollywood
+```{r}
+movie %>%
+  mutate(release_year = str_sub(release_date, start = -2),
+         profit = worldwide_gross - production_budget,
+         profit_mill = profit / 1000000) %>% 
+  group_by(release_year) %>% 
+  summarise(profit_mill_avg = mean(profit_mill)) %>% 
+  arrange(desc(profit_mill_avg)) %>% 
+  head(20) %>%
+  mutate(release_year = fct_reorder(release_year, profit_mill_avg)) %>% 
+  ggplot(aes(x = release_year, y = profit_mill_avg, fill = release_year)) +
+  geom_col() +
+  scale_y_continuous(limits = c(0, 300),
+                     breaks = seq(0, 300, by = 50)) +
+  theme(legend.position = "none") +
+  labs(x = "Release Year",
+       y = "Profit in millions",
+       caption = "@jsonbaik") +
+  ggtitle("Top 20 Profitable Years for Movies",
+          subtitle = "1942 was the most profitable year by a huge margin")
+```
+
+
+This is scrap work.
+
+```{r Check calculation}
+movie %>% 
+  # Add `x_times` demonstrating worldwide_gross / production_budget 
+  mutate(x_times = worldwide_gross / production_budget,
+         x_times = round2(x_times, 0)) %>% 
+  count(genre, x_times) %>%
+  group_by(genre) %>% 
+  mutate(prop_genre = n / sum(n)) %>% 
+  ungroup() %>% 
+  group_by(genre) %>% 
+  summarise(sum(prop_genre))
+```
+
+
